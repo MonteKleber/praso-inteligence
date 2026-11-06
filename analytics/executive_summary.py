@@ -45,6 +45,7 @@ def build_executive_summary_from_records(
     }
 
     receita_historica_total = 0.0
+    receita_historica_clientes_em_risco_total = 0.0
     receita_mensal_estimada_total = 0.0
     receita_em_risco_total = 0.0
     total_pedidos_concluidos = 0
@@ -56,7 +57,10 @@ def build_executive_summary_from_records(
         status = c.get("classificacao_risco", STATUS_DADOS_INSUFICIENTES)
         contagem_status[status] = contagem_status.get(status, 0) + 1
 
-        receita_historica_total += float(c.get("receita_historica") or 0.0)
+        rec_hist = float(c.get("receita_historica") or 0.0)
+        receita_historica_total += rec_hist
+        if c.get("em_risco_comercial"):
+            receita_historica_clientes_em_risco_total += rec_hist
         receita_mensal_estimada_total += float(c.get("receita_mensal_estimada") or 0.0)
         receita_em_risco_total += float(c.get("receita_em_risco") or 0.0)
         total_pedidos_concluidos += int(c.get("quantidade_pedidos") or 0)
@@ -68,6 +72,9 @@ def build_executive_summary_from_records(
         potencial_cross_sell_total += float(c.get("potencial_cross_sell_pedido") or 0.0)
 
     receita_historica_total = round(receita_historica_total, 2)
+    receita_historica_clientes_em_risco_total = round(
+        receita_historica_clientes_em_risco_total, 2
+    )
     receita_mensal_estimada_total = round(receita_mensal_estimada_total, 2)
     receita_em_risco_total = round(receita_em_risco_total, 2)
     potencial_cross_sell_total = round(potencial_cross_sell_total, 2)
@@ -184,6 +191,7 @@ def build_executive_summary_from_records(
         "total_pedidos_concluidos": total_pedidos_concluidos,
         "ticket_medio_geral": ticket_medio_geral,
         "receita_historica_total": receita_historica_total,
+        "receita_historica_clientes_em_risco": receita_historica_clientes_em_risco_total,
         "receita_mensal_estimada_total": receita_mensal_estimada_total,
         "receita_estimada_em_risco": receita_em_risco_total,
         "quantidade_oportunidades_cross_sell": total_oportunidades_cross_sell,

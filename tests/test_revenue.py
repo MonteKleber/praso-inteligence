@@ -34,6 +34,7 @@ def test_calculo_receita_cliente_elevado_valor_em_alto_risco() -> None:
     rev = calculate_customer_revenue_metrics(churn)
 
     assert rev["receita_historica"] == 6000.0
+    assert rev["receita_historica_cliente_em_risco"] == 6000.0
     assert rev["receita_media_por_pedido"] == 2000.0
     assert rev["receita_mensal_estimada"] == 6000.0
     assert rev["receita_potencial_recompra"] == 2000.0
@@ -53,6 +54,7 @@ def test_cliente_saudavel_possui_zero_receita_em_risco() -> None:
     rev = calculate_customer_revenue_metrics(churn)
 
     assert rev["receita_historica"] == 3000.0
+    assert rev["receita_historica_cliente_em_risco"] == 0.0
     assert rev["receita_mensal_estimada"] == 3000.0
     assert rev["receita_em_risco"] == 0.0
 

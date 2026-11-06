@@ -82,6 +82,7 @@ def calculate_customer_revenue_metrics(
         return {
             **churn_metrics,
             "receita_historica": 0.0,
+            "receita_historica_cliente_em_risco": 0.0,
             "receita_media_por_pedido": None,
             "receita_mensal_estimada": None,
             "receita_potencial_recompra": 0.0,
@@ -91,6 +92,8 @@ def calculate_customer_revenue_metrics(
 
     ticket_float = round(float(ticket_medio), 2)
     potencial_proximo_pedido = ticket_float
+    em_risco_flag = bool(churn_metrics.get("em_risco_comercial", False))
+    receita_hist_em_risco = receita_historica if em_risco_flag else 0.0
 
     # Se possui ciclo mediano calculado, projeta a receita para uma janela de 30 dias
     if ciclo_mediano is not None and float(ciclo_mediano) > 0:
@@ -117,6 +120,7 @@ def calculate_customer_revenue_metrics(
     return {
         **churn_metrics,
         "receita_historica": receita_historica,
+        "receita_historica_cliente_em_risco": receita_hist_em_risco,
         "receita_media_por_pedido": ticket_float,
         "receita_mensal_estimada": receita_mensal,
         "receita_potencial_recompra": potencial_proximo_pedido,
@@ -165,6 +169,7 @@ def summarize_revenue_by_dimension(
                 "clientes_em_risco": 0,
                 "quantidade_pedidos": 0,
                 "receita_historica": 0.0,
+                "receita_historica_clientes_em_risco": 0.0,
                 "receita_mensal_estimada": 0.0,
                 "receita_em_risco": 0.0,
             }
@@ -173,6 +178,11 @@ def summarize_revenue_by_dimension(
         grp["total_clientes"] += 1
         if item.get("em_risco_comercial"):
             grp["clientes_em_risco"] += 1
+            grp["receita_historica_clientes_em_risco"] = round(
+                grp["receita_historica_clientes_em_risco"]
+                + float(item.get("receita_historica") or 0.0),
+                2,
+            )
         grp["quantidade_pedidos"] += int(item.get("quantidade_pedidos") or 0)
         grp["receita_historica"] = round(
             grp["receita_historica"] + float(item.get("receita_historica") or 0.0), 2
