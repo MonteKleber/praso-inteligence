@@ -17,6 +17,9 @@ Calcula e separa de forma transparente três conceitos financeiros distintos:
    - Alto risco                     : 100% da receita potencial mensal
 
 Nota Importante:
+- O peso de 100% atribuído ao `Alto risco` representa 100% de EXPOSIÇÃO FINANCEIRA
+  ESTIMADA da receita mensal projetada segundo uma regra de negócio gerencial, e
+  NÃO uma probabilidade estatística de perda definitiva de 100%.
 - Receita potencial e receita em risco são ESTIMATIVAS GERENCIAIS para priorização
   da força de vendas, não representando prejuízo contábil confirmado nem
   faturamento garantido.
@@ -54,6 +57,7 @@ class RevenueRiskWeights:
     peso_risco_moderado: float = 0.70
     peso_alto_risco: float = 1.00
     janela_dias_projecao: float = 30.0
+    ciclo_minimo_projecao_dias: float = 3.0
 
 
 DEFAULT_REVENUE_WEIGHTS = RevenueRiskWeights()
@@ -95,9 +99,13 @@ def calculate_customer_revenue_metrics(
     em_risco_flag = bool(churn_metrics.get("em_risco_comercial", False))
     receita_hist_em_risco = receita_historica if em_risco_flag else 0.0
 
-    # Se possui ciclo mediano calculado, projeta a receita para uma janela de 30 dias
+    # Se possui ciclo mediano calculado, projeta a receita para uma janela de 30 dias.
+    # Aplica um piso (`ciclo_minimo_projecao_dias`, padrão 3.0 dias) ao denominador
+    # para evitar projeções mensais exageradas (ex.: multiplicar por 30x caso um
+    # cliente tenha apenas 2 compras em dias seguidos).
     if ciclo_mediano is not None and float(ciclo_mediano) > 0:
-        pedidos_esperados_mes = weights.janela_dias_projecao / float(ciclo_mediano)
+        ciclo_efetivo = max(float(weights.ciclo_minimo_projecao_dias), float(ciclo_mediano))
+        pedidos_esperados_mes = weights.janela_dias_projecao / ciclo_efetivo
         receita_mensal = round(ticket_float * pedidos_esperados_mes, 2)
     else:
         # Cliente com apenas 1 pedido: ainda sem frequência mensal definida

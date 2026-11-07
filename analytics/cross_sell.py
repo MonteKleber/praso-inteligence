@@ -9,8 +9,9 @@ Lógica Comercial e Regras de Negócio:
    Para cada segmento (ex.: `'Padaria & Confeitaria'`) e cada produto do catálogo,
    calculamos:
        taxa_penetracao = clientes_do_segmento_que_compram_produto / total_clientes_ativos_no_segmento
-   (Um cliente é considerado comprador recorrente do produto se já o adquiriu
-   em pelo menos `min_pedidos_produto_cliente` pedidos, ou nunca o adquiriu).
+   (Um cliente é considerado comprador de um produto se já o adquiriu em pelo
+   menos 1 pedido concluído; recomendações são feitas apenas para produtos com
+   0 compras históricas naquele cliente).
 2. Filtro de Amostra Mínima:
    Para evitar recomendações espúrias em segmentos com poucos clientes, exigimos
    que o segmento possua pelo menos `min_clientes_segmento` clientes ativos e que

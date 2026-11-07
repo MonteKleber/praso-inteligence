@@ -6,6 +6,9 @@ de negócio para que a equipe de vendas saiba exatamente qual cliente contatar
 primeiro e qual abordagem adotar.
 
 Pilares da Pontuação (Pesos Configuráveis, soma = 100 pontos):
+- Nota Metodológica: Os pesos abaixo (45/25/20/10) são PARÂMETROS HEURÍSTICOS
+  INICIAIS definidos por regra de negócio, ainda não calibrados empiricamente
+  com dados comerciais reais de conversão/recuperação.
 1. Urgência / Risco de Churn (até 45 pontos):
    Baseado na faixa de risco (`Alto risco`=100%, `Risco moderado`=75%,
    `Atenção`=45%, `Dados insuficientes`=25%, `Saudável`=10%) combinado com a
@@ -200,7 +203,11 @@ def prioritize_customers(
 
     max_potencial = max(
         (
-            float(m.get("receita_mensal_estimada") or m.get("receita_historica") or 0.0)
+            float(
+                m.get("receita_mensal_estimada")
+                if m.get("receita_mensal_estimada") is not None
+                else (m.get("ticket_medio") or 0.0)
+            )
             for m in revenue_metrics_list
         ),
         default=1.0,
@@ -225,7 +232,11 @@ def prioritize_customers(
 
         fator_risco = _calculate_risk_component_score(m)
         fator_ticket = min(1.0, float(m.get("ticket_medio") or 0.0) / max_ticket)
-        rec_ref = float(m.get("receita_mensal_estimada") or m.get("receita_historica") or 0.0)
+        rec_ref = float(
+            m.get("receita_mensal_estimada")
+            if m.get("receita_mensal_estimada") is not None
+            else (m.get("ticket_medio") or 0.0)
+        )
         fator_receita = min(1.0, rec_ref / max_potencial)
         fator_cs = min(1.0, potencial_cs / max_cs) if max_cs > 0 else 0.0
 

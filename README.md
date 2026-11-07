@@ -40,7 +40,7 @@ praso-intelligence/
 │   ├── cross_sell.py           # Recomendações de produtos por penetração no segmento B2B
 │   ├── prioritization.py       # Score de prioridade comercial (0 a 100), desempate e script WhatsApp
 │   └── executive_summary.py    # Consolidação de KPIs gerenciais e diagnóstico executivo
-├── tests/                      # Suíte de 25 testes automatizados (Pytest) em bancos isolados
+├── tests/                      # Suíte de 31 testes automatizados (Pytest) em bancos isolados
 └── requirements.txt            # Dependências do projeto
 ```
 
@@ -72,9 +72,10 @@ $$I_{atraso} = \frac{\text{dias\_desde\_ultima\_compra}}{\text{intervalo\_median
 ### 3.3. Análise de Receita (`analytics/revenue.py`)
 Separa rigorosamente três grandezas financeiras (sem jamais duplicar valores de pedidos em `JOIN` com itens):
 1. **Receita Histórica (`receita_historica`):** Soma efetiva dos pedidos concluídos no passado, incluindo o recorte de **Receita Histórica Associada a Clientes em Risco (`receita_historica_clientes_em_risco`)**.
-2. **Receita Mensal Estimada (`receita_mensal_estimada`):** Projeção para uma janela de 30 dias baseada no ritmo mediano do cliente:
-   $$\text{Receita Mensal Estimada} = \text{Ticket Médio} \times \left(\frac{30}{\text{Intervalo Mediano}}\right)$$
+2. **Receita Mensal Estimada (`receita_mensal_estimada`):** Projeção para uma janela de 30 dias baseada no ritmo mediano do cliente (com piso configurável de 3 dias no denominador para evitar projeções exageradas em ciclos muito curtos):
+   $$\text{Receita Mensal Estimada} = \text{Ticket Médio} \times \left(\frac{30}{\max(3.0,\ \text{Intervalo Mediano})}\right)$$
 3. **Receita em Risco Estimada (`receita_em_risco`):** Parcela da receita mensal estimada ponderada pelo fator de exposição do risco atual (`Saudável` = 0%, `Atenção` = 30%, `Risco moderado` = 70%, `Alto risco` = 100%).
+   - **Esclarecimento metodológico:** O peso de **100%** atribuído ao `Alto risco` representa **100% de exposição financeira estimada** da receita mensal projetada segundo uma regra de negócio gerencial, e **não** uma probabilidade estatística de perda definitiva de 100%.
 
 ### 3.4. Motor de Cross-Sell (`analytics/cross_sell.py`)
 - Calcula a **Taxa de Penetração no Segmento**: proporção de estabelecimentos ativos do mesmo `tipo_estabelecimento` que compram determinado produto.
@@ -85,9 +86,15 @@ Separa rigorosamente três grandezas financeiras (sem jamais duplicar valores de
 Calcula o `score_prioridade` (0 a 100) combinando 4 componentes normalizados:
 - **Urgência / Risco de Churn:** até **45 pontos**
 - **Ticket Médio:** até **25 pontos**
-- **Potencial Mensal / Receita Histórica:** até **20 pontos**
+- **Potencial MensalEstimado:** até **20 pontos**
 - **Potencial de Cross-Sell:** até **10 pontos**
 - **Desempate determinístico:** 1º Maior Receita em Risco $\rightarrow$ 2º Maior Ticket Médio $\rightarrow$ 3º Maior Dias sem Comprar $\rightarrow$ 4º Menor `cliente_id`.
+- **Nota sobre os Pesos:** Os pesos do score de priorização (`45 / 25 / 20 / 10`) são **parâmetros heurísticos iniciais** definidos por regra de negócio para ordenar a fila de atendimento comercial, ainda não calibrados empiricamente com dados históricos reais de conversão ou recuperação.
+
+### 3.6. Limitações Conhecidas do Modelo Atual
+1. **Sazonalidade:** O cálculo do ciclo habitual baseia-se na mediana histórica global dos intervalos de compra do cliente, sem decomposição explícita de sazonalidade por mês do calendário. Dessa forma, variações bruscas de frequência após períodos sazonais (como festas juninas ou fim de ano) podem alterar temporariamente o índice de atraso e exigem interpretação contextual do consultor comercial.
+2. **Amostra Inicial de Ciclo:** Clientes com apenas 2 compras possuem apenas 1 intervalo observado; embora já permitam cálculo inicial de ciclo, a estabilidade da mediana aumenta à medida que o cliente acumula 3 ou mais pedidos.
+3. **Natureza Heurística:** As classificações de risco e projeções de receita são indicadores gerenciais baseados no comportamento passado e não substituem modelos probabilísticos ou validações contratuais.
 
 ---
 
@@ -118,6 +125,6 @@ pip install -r requirements.txt
 # 4. Popular o banco SQLite com dados sintéticos (seed=42)
 python -m database.seed
 
-# 5. Executar todos os 25 testes automatizados
+# 5. Executar todos os 31 testes automatizados
 pytest tests/ -v
 ```

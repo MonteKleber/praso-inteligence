@@ -6,17 +6,22 @@ a última compra e o seu ciclo mediano habitual de recompra:
 
     indice_atraso = dias_desde_ultima_compra / intervalo_mediano_dias
 
-Importante (Nota Metodológica):
+Importante (Nota Metodológica e Limitações Conhecidas):
 - Esta classificação é um INDICADOR HEURÍSTICO DE RISCO COMERCIAL para apoio à
   tomada de decisão da equipe de vendas, e NÃO um modelo preditivo probabilístico.
 - Clientes sem pedidos ou com apenas 1 pedido (ou sem intervalo calculável)
   recebem a classificação `'Dados insuficientes'` e NUNCA são rotulados
   automaticamente como churn.
+- Sazonalidade (Limitação Conhecida): O modelo atual compara o tempo sem comprar
+  com a mediana histórica global do cliente, sem ajuste explícito por calendário
+  sazonal. Assim, desacelerações naturais pós-alta temporada podem gerar alertas
+  preventivos que devem ser interpretados pelo consultor comercial.
 """
 
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
+import statistics
 from typing import Any, Optional
 
 from analytics import DEFAULT_REFERENCE_DATE
@@ -62,12 +67,12 @@ def detect_interval_trend(intervals: list[int]) -> str:
     # Compara o último intervalo observado com a mediana dos intervalos anteriores
     ultimo_intervalo = intervals[-1]
     anteriores = intervals[:-1]
-    media_anteriores = sum(anteriores) / len(anteriores)
+    mediana_anteriores = float(statistics.median(anteriores))
 
-    if media_anteriores <= 0:
+    if mediana_anteriores <= 0:
         return "Estável"
 
-    variacao = ultimo_intervalo / media_anteriores
+    variacao = ultimo_intervalo / mediana_anteriores
     if variacao >= 1.25:
         return "Desacelerando (intervalo crescente)"
     if variacao <= 0.80:
