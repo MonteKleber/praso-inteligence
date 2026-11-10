@@ -6,125 +6,158 @@
 
 ---
 
-## 🎯 1. Contexto e Problema de Negócio
+## 🎯 1. Contexto e Objetivo da Solução
 
-No atacado e distribuição B2B (atendendo padarias, restaurantes, lanchonetes, bares e mercadinhos), os clientes apresentam ciclos de reposição de estoque relativamente previsíveis. Quando um estabelecimento ultrapassa significativamente seu intervalo habitual de compras, aumenta o risco de migração silenciosa para concorrentes (*churn*).
+No atacado e distribuição B2B (atendendo padarias, restaurantes, lanchonetes, bares e mercadinhos), os estabelecimentos apresentam ciclos de reposição de estoque relativamente previsíveis. Quando um cliente ultrapassa significativamente seu intervalo habitual de compras, aumenta o risco de migração silenciosa para concorrentes (*churn*).
 
-O **Praso Intelligence** transforma o histórico transacional de pedidos em inteligência comercial acionável:
+O **Praso Intelligence** é uma aplicação de **Business Intelligence B2B** construída em Python, SQLite, Pandas, Plotly e Streamlit que transforma o histórico transacional de pedidos em inteligência comercial acionável para as áreas de Planejamento e Vendas:
 - Identifica o ciclo habitual de cada cliente (usando a **mediana** para resistir a compras atípicas).
 - Classifica heuristicamente o risco de perda comparando o atraso atual com o ritmo do próprio cliente.
 - Quantifica a receita histórica, o potencial mensal e a receita exposta ao risco.
 - Mapeia oportunidades de **Cross-Sell** comparando o mix do cliente com o benchmark do seu segmento.
-- Prioriza a fila de contatos comerciais por um score multicritério (0 a 100) transparente.
+- Prioriza a fila de contatos comerciais por um score multicritério (0 a 100) transparente e gera roteiros consultivos para WhatsApp.
 
-> ⚠️ **Nota sobre os Dados:** Todos os dados utilizados neste projeto são **100% sintéticos**, gerados deterministicamente (`seed=42`) com fins demonstrativos para simular operações em Recife e Fortaleza.
+> ⚠️ **Aviso Importante sobre os Dados Sintéticos:** Esta plataforma é um **projeto demonstrativo independente** de portfólio (não oficial da Praso). Todos os clientes, produtos, pedidos e valores utilizados são **100% sintéticos**, gerados deterministicamente (`seed=42`, data de referência analítica fixada em `05/11/2026`) para simular operações em Recife e Fortaleza.
 
 ---
 
-## 🏗️ 2. Arquitetura e Responsabilidade dos Módulos
+## 🛠️ 2. Tecnologias Utilizadas
+
+- **Linguagem:** Python 3
+- **Interface & Dashboard Web:** Streamlit (arquitetura multipágina corporativa)
+- **Banco de Dados:** SQLite 3 (com integridade referencial ativa via `PRAGMA foreign_keys = ON`)
+- **Manipulação e Exportação de Dados:** Pandas
+- **Visualização Interativa:** Plotly Express & Plotly Graph Objects
+- **Testes Automatizados:** Pytest (36 testes cobrindo schema, seed, motor analítico, auditoria matemática e integração do dashboard)
+
+---
+
+## 🖥️ 3. Funcionalidades das Cinco Páginas do Dashboard
+
+1. **Página 1 — Visão Geral (`pages/1_Visao_Geral.py`):**
+   - 9 Cartões de Indicadores (Total de clientes, Saudáveis, Atenção, Risco moderado, Alto risco, Receita histórica, Receita mensal estimada, Receita em risco e Ticket médio).
+   - **Resumo Executivo Dinâmico** com diagnósticos e recomendações calculados em tempo real sobre o recorte selecionado.
+   - 5 Gráficos interativos: distribuição por classificação de risco, proporção saudáveis vs. em risco, receita histórica vs. receita em risco por segmento, comparativo financeiro por cidade e evolução mensal de pedidos e faturamento.
+2. **Página 2 — Radar de Clientes (`pages/2_Radar_de_Clientes.py`):**
+   - Fila interativa de priorização comercial com filtros combinados por Cidade, Segmento, Classificação de Risco, Faixa de Score (0 a 100) e pesquisa textual por nome/ID.
+   - Destaque explicativo do cliente Top #1 no filtro atual, detalhando a nota de cada pilar do score.
+   - Navegação direta em 1 clique para abrir o Perfil 360º do estabelecimento selecionado.
+3. **Página 3 — Perfil 360º do Cliente (`pages/3_Perfil_do_Cliente.py`):**
+   - Dossiê individual com indicadores de ciclo mediano, primeira e última compra, tendência de intervalo e exposição financeira.
+   - **Seção de Interpretação Comercial** respondendo objetivamente às perguntas de negócio (comportamento habitual, atraso, justificativa da classificação e cautela analítica).
+   - Gráficos de linha do tempo de valores por pedido, comparação de intervalos históricos vs. janela atual sem comprar e mix de produtos adquiridos.
+4. **Página 4 — Central de Oportunidades (`pages/4_Oportunidades.py`):**
+   - **Aba A (Cross-Sell):** Recomendações de produtos baseadas na taxa de penetração do segmento B2B (`>= 25%`) para itens nunca adquiridos pelo cliente, com filtros por Cidade, Segmento, Cliente e Produto.
+   - **Aba B (Recompra e WhatsApp):** Lista priorizada de clientes com recompra atrasada ou próxima (`<= 5 dias`) e gerador de mensagem consultiva para WhatsApp.
+5. **Página 5 — Relatórios e Exportação (`pages/5_Relatorios.py`):**
+   - Análises comparativas por Segmento, Cidade, Classificação de Risco e Consultor Comercial.
+   - Filtro de período para faturamento histórico realizado (preservando intactos os indicadores comportamentais de ciclo e previsão de recompra).
+   - **Central de Exportação CSV (`UTF-8-SIG`)** compatível diretamente com Microsoft Excel.
+
+---
+
+## 🏗️ 4. Estrutura Completa do Projeto
 
 ```text
 praso-intelligence/
-├── database/
-│   ├── connection.py           # Conexão SQLite com PRAGMA foreign_keys = ON e transações seguras
-│   ├── schema.sql              # Modelagem relacional 3FN (clientes, produtos, pedidos, itens_pedido)
-│   └── seed.py                 # Gerador determinístico de dados sintéticos B2B (data ref: 2026-11-05)
+├── app.py                          # Entrada principal e roteador multipágina do Streamlit
+├── requirements.txt                # Dependências do projeto
+├── README.md                       # Documentação técnica e de negócios
+├── .streamlit/
+│   └── config.toml                 # Tema corporativo (paleta SaaS B2B)
+├── assets/
+│   └── style.css                   # Folha de estilo CSS customizada (sidebar escura e KPI cards)
+├── pages/
+│   ├── 1_Visao_Geral.py            # Página 1: Visão Geral e Resumo Executivo
+│   ├── 2_Radar_de_Clientes.py      # Página 2: Radar e Fila de Priorização
+│   ├── 3_Perfil_do_Cliente.py      # Página 3: Dossiê 360º do Estabelecimento
+│   ├── 4_Oportunidades.py          # Página 4: Cross-Sell, Recompra e WhatsApp
+│   └── 5_Relatorios.py             # Página 5: Relatórios Dimensionais e Exportação CSV
+├── components/
+│   ├── __init__.py
+│   ├── sidebar.py                  # Barra lateral, cache seguro e filtros em session_state
+│   ├── kpi_cards.py                # Cartões de KPI, cabeçalhos e badges de risco
+│   ├── charts.py                   # Gráficos Plotly padronizados
+│   └── tables.py                   # Formatação de tabelas em português brasileiro
 ├── services/
-│   ├── customer_service.py     # Camada de acesso a dados cadastrais e filtros de clientes
-│   └── order_service.py        # Consultas de pedidos (sem duplicação por JOIN) e itens enriquecidos
+│   ├── __init__.py
+│   ├── customer_service.py         # Consultas SQL de clientes
+│   ├── order_service.py            # Consultas SQL de pedidos, produtos e itens
+│   └── dashboard_service.py        # Camada de integração entre UI, serviços e analytics
 ├── analytics/
-│   ├── __init__.py             # Centraliza DEFAULT_REFERENCE_DATE = date(2026, 11, 5)
-│   ├── repurchase.py           # Cálculo de intervalos (média/mediana/desvio), ticket e próxima compra
-│   ├── churn.py                # Classificação heurística de risco de abandono e tendência de ciclo
-│   ├── revenue.py              # Receita histórica, potencial mensal, receita em risco e cortes por dimensão
-│   ├── cross_sell.py           # Recomendações de produtos por penetração no segmento B2B
-│   ├── prioritization.py       # Score de prioridade comercial (0 a 100), desempate e script WhatsApp
-│   └── executive_summary.py    # Consolidação de KPIs gerenciais e diagnóstico executivo
-├── tests/                      # Suíte de 31 testes automatizados (Pytest) em bancos isolados
-└── requirements.txt            # Dependências do projeto
+│   ├── __init__.py                 # Centraliza DEFAULT_REFERENCE_DATE = date(2026, 11, 5)
+│   ├── repurchase.py               # Cálculo de intervalos (média/mediana), ticket e próxima compra
+│   ├── churn.py                    # Classificação heurística de risco de abandono
+│   ├── revenue.py                  # Receita histórica, potencial mensal e receita em risco
+│   ├── cross_sell.py               # Recomendações de produtos por penetração no segmento
+│   ├── prioritization.py           # Score de prioridade comercial (0 a 100) e desempate
+│   └── executive_summary.py        # Consolidação de KPIs gerenciais e diagnóstico executivo
+├── database/
+│   ├── __init__.py
+│   ├── connection.py               # Conexão SQLite transacional
+│   ├── schema.sql                  # DDL Relacional (clientes, produtos, pedidos, itens_pedido)
+│   └── seed.py                     # Gerador determinístico de dados sintéticos (seed=42)
+└── tests/                          # Suíte de 36 testes automatizados (Pytest)
 ```
 
 ---
 
-## 📐 3. Regras de Negócio, Fórmulas e Limitações
+## 📐 5. Regras de Negócio, Fórmulas e Limitações Conhecidas
 
-### 3.1. Análise de Recompra (`analytics/repurchase.py`)
-- **Intervalos entre compras ($\Delta t$):** Calculados em dias corridos entre datas distintas e consecutivas de pedidos com status `'Concluído'`.
-- **Ciclo Habitual ($\tilde{\Delta t}$):** Definido pela **mediana** dos intervalos ($\text{intervalo\_mediano\_dias}$), evitando que um único atraso antigo (ex.: férias ou reforma) distorça a previsão futura como ocorreria na média aritmética.
+### 5.1. Análise de Recompra (`analytics/repurchase.py`)
+- **Ciclo Habitual (`intervalo_mediano_dias`):** Mediana dos intervalos em dias corridos entre datas distintas e consecutivas de pedidos concluídos, evitando que um único atraso antigo (ex.: férias ou reforma) distorça a previsão futura como ocorreria na média aritmética.
 - **Próxima Recompra Estimada:**
-  $$\text{Próxima Compra} = \text{Data da Última Compra} + \text{round}(\tilde{\Delta t})$$
-- **Tratamento de Casos Especiais (`None` vs `0`):**
-  - **0 pedidos:** `quantidade_pedidos = 0`, `valor_total_historico = 0.0`, mas `ticket_medio = None`, `intervalo_mediano_dias = None` e `proxima_compra_estimada = None`.
-  - **1 único pedido:** Possui `ticket_medio` e `dias_desde_ultima_compra`, mas como não há par de datas para medir intervalo, `intervalo_mediano_dias = None` e `proxima_compra_estimada = None` (sem previsões artificiais).
+  ```text
+  proxima_compra_estimada = ultima_compra + round(intervalo_mediano_dias)
+  ```
+- **Tratamento de `None` vs `0`:** Clientes com 0 ou 1 pedido não possuem intervalo entre compras calculável (`intervalo_mediano_dias = None`, `proxima_compra_estimada = None`), evitando previsões artificiais.
 
-### 3.2. Classificação Heurística de Risco de Churn (`analytics/churn.py`)
-Baseada no **Índice de Atraso ($I_{atraso}$)** calculado na data de referência (`2026-11-05`):
-$$I_{atraso} = \frac{\text{dias\_desde\_ultima\_compra}}{\text{intervalo\_mediano\_dias}}$$
+### 5.2. Classificação Heurística de Risco de Churn (`analytics/churn.py`)
+Baseada no **Índice de Atraso (`indice_atraso`)** calculado na data de referência `2026-11-05`:
+```text
+indice_atraso = dias_desde_ultima_compra / intervalo_mediano_dias
+```
 
-| Faixa de Classificação | Critério Configurável ($I_{atraso}$) | Interpretação Comercial |
+| Faixa de Classificação | Critério Configurável (`indice_atraso`) | Interpretação Comercial |
 | :--- | :--- | :--- |
-| **Saudável (Em dia)** | $I_{atraso} \le 1.15$ | Dentro do ciclo esperado (com até 15% de tolerância operacional). |
-| **Atenção** | $1.15 < I_{atraso} \le 1.50$ | Janela habitual ultrapassada; requer contato preventivo de reposição. |
-| **Risco moderado** | $1.50 < I_{atraso} \le 2.50$ | Atraso significativo (1,5 a 2,5 ciclos sem comprar). |
-| **Alto risco** | $I_{atraso} > 2.50$ | Atraso severo (> 2,5 ciclos); exige ação imediata de recuperação. |
-| **Dados insuficientes** | $< 2$ datas de compra | Cliente novo ou sem histórico; **nunca** é rotulado automaticamente como churn. |
+| **Saudável (Em dia)** | `indice_atraso <= 1.15` | Dentro do ciclo esperado (com até 15% de tolerância operacional). |
+| **Atenção** | `1.15 < indice_atraso <= 1.50` | Janela habitual ultrapassada; requer contato preventivo de reposição. |
+| **Risco moderado** | `1.50 < indice_atraso <= 2.50` | Atraso significativo (1,5 a 2,5 ciclos sem comprar). |
+| **Alto risco** | `indice_atraso > 2.50` | Atraso severo (> 2,5 ciclos); exige ação imediata de recuperação. |
+| **Dados insuficientes** | `< 2 datas de compra` | Cliente novo ou sem histórico; **nunca** é rotulado automaticamente como churn. |
 
-### 3.3. Análise de Receita (`analytics/revenue.py`)
-Separa rigorosamente três grandezas financeiras (sem jamais duplicar valores de pedidos em `JOIN` com itens):
-1. **Receita Histórica (`receita_historica`):** Soma efetiva dos pedidos concluídos no passado, incluindo o recorte de **Receita Histórica Associada a Clientes em Risco (`receita_historica_clientes_em_risco`)**.
-2. **Receita Mensal Estimada (`receita_mensal_estimada`):** Projeção para uma janela de 30 dias baseada no ritmo mediano do cliente (com piso configurável de 3 dias no denominador para evitar projeções exageradas em ciclos muito curtos):
-   $$\text{Receita Mensal Estimada} = \text{Ticket Médio} \times \left(\frac{30}{\max(3.0,\ \text{Intervalo Mediano})}\right)$$
-3. **Receita em Risco Estimada (`receita_em_risco`):** Parcela da receita mensal estimada ponderada pelo fator de exposição do risco atual (`Saudável` = 0%, `Atenção` = 30%, `Risco moderado` = 70%, `Alto risco` = 100%).
-   - **Esclarecimento metodológico:** O peso de **100%** atribuído ao `Alto risco` representa **100% de exposição financeira estimada** da receita mensal projetada segundo uma regra de negócio gerencial, e **não** uma probabilidade estatística de perda definitiva de 100%.
-
-### 3.4. Motor de Cross-Sell (`analytics/cross_sell.py`)
-- Calcula a **Taxa de Penetração no Segmento**: proporção de estabelecimentos ativos do mesmo `tipo_estabelecimento` que compram determinado produto.
-- Sugere produtos com penetração $\ge 25\%$ no segmento (respeitando amostra mínima de clientes e compradores) que o cliente analisado **ainda nunca comprou**.
-- Estima o potencial financeiro por pedido com base no gasto médio daquele SKU entre os pares do segmento.
-
-### 3.5. Priorização Comercial (`analytics/prioritization.py`)
-Calcula o `score_prioridade` (0 a 100) combinando 4 componentes normalizados:
-- **Urgência / Risco de Churn:** até **45 pontos**
-- **Ticket Médio:** até **25 pontos**
-- **Potencial MensalEstimado:** até **20 pontos**
-- **Potencial de Cross-Sell:** até **10 pontos**
-- **Desempate determinístico:** 1º Maior Receita em Risco $\rightarrow$ 2º Maior Ticket Médio $\rightarrow$ 3º Maior Dias sem Comprar $\rightarrow$ 4º Menor `cliente_id`.
-- **Nota sobre os Pesos:** Os pesos do score de priorização (`45 / 25 / 20 / 10`) são **parâmetros heurísticos iniciais** definidos por regra de negócio para ordenar a fila de atendimento comercial, ainda não calibrados empiricamente com dados históricos reais de conversão ou recuperação.
-
-### 3.6. Limitações Conhecidas do Modelo Atual
-1. **Sazonalidade:** O cálculo do ciclo habitual baseia-se na mediana histórica global dos intervalos de compra do cliente, sem decomposição explícita de sazonalidade por mês do calendário. Dessa forma, variações bruscas de frequência após períodos sazonais (como festas juninas ou fim de ano) podem alterar temporariamente o índice de atraso e exigem interpretação contextual do consultor comercial.
-2. **Amostra Inicial de Ciclo:** Clientes com apenas 2 compras possuem apenas 1 intervalo observado; embora já permitam cálculo inicial de ciclo, a estabilidade da mediana aumenta à medida que o cliente acumula 3 ou mais pedidos.
-3. **Natureza Heurística:** As classificações de risco e projeções de receita são indicadores gerenciais baseados no comportamento passado e não substituem modelos probabilísticos ou validações contratuais.
+### 5.3. Receita e Priorização Comercial (`analytics/revenue.py` e `analytics/prioritization.py`)
+- **Receita Mensal Estimada:**
+  ```text
+  receita_mensal_estimada = ticket_medio * (30 / max(3.0, intervalo_mediano_dias))
+  ```
+- **Exposição Financeira em Risco:** `Saudável` = 0%, `Atenção` = 30%, `Risco moderado` = 70%, `Alto risco` = 100%. *(O peso de 100% no Alto Risco representa exposição financeira estimada segundo regra de negócio, e não probabilidade estatística de perda de 100%).*
+- **Score de Priorização (0 a 100):** Combina Urgência/Risco (45 pts), Ticket Médio (25 pts), Potencial Mensal (20 pts) e Cross-Sell (10 pts). *(Pesos heurísticos iniciais, ainda não calibrados com dados reais de conversão).*
+- **Limitação de Sazonalidade:** O cálculo do ciclo habitual utiliza a mediana histórica global sem ajuste explícito por calendário sazonal, exigindo leitura contextual do consultor após períodos de alta temporada.
 
 ---
 
-## 📈 4. Exemplo de Resultados na Base Sintética (`2026-11-05`)
+## 🚀 6. Como Instalar, Inicializar o Banco, Executar o Dashboard e Rodar os Testes
 
-- **Carteira Analisada:** 100 clientes (52 em Recife, 48 em Fortaleza) e 1.092 pedidos concluídos.
-- **Distribuição de Risco:** 50 Saudáveis, 14 em Atenção, 20 em Risco Moderado, 14 em Alto Risco e 2 com Dados Insuficientes (1ª compra).
-- **Receita Histórica Total:** R$ 3.066.466,34 (sendo R$ 1.448.329,63 gerados historicamente pelos 48 clientes hoje em risco).
-- **Receita Mensal Estimada em Risco (próximos 30 dias):** R$ 168.188,72.
-- **Oportunidades de Cross-Sell:** 238 recomendações identificadas.
-
----
-
-## 🚀 5. Como Executar Localmente e Rodar os Testes
+No Windows PowerShell, execute:
 
 ```powershell
-# 1. Clonar o repositório
-git clone https://github.com/MonteKleber/praso-inteligence.git
-cd praso-inteligence
+# 1. Acessar o diretório do projeto
+cd C:\Users\klebe\OneDrive\Documentos\praso-intelligence
 
-# 2. Criar e ativar o ambiente virtual
+# 2. Criar e ativar o ambiente virtual (caso ainda não exista)
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 
-# 3. Instalar dependências
-pip install -r requirements.txt
+# 3. Instalar as dependências
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
 
-# 4. Popular o banco SQLite com dados sintéticos (seed=42)
-python -m database.seed
+# 4. Inicializar e popular o banco SQLite sintético (seed=42)
+.\.venv\Scripts\python.exe -m database.seed
 
-# 5. Executar todos os 31 testes automatizados
-pytest tests/ -v
+# 5. Executar a aplicação Streamlit
+.\.venv\Scripts\python.exe -m streamlit run app.py
+
+# 6. Executar toda a suíte de 36 testes automatizados
+.\.venv\Scripts\python.exe -m pytest tests\ -v
 ```
